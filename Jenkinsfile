@@ -16,8 +16,8 @@ pipeline {
                         sh "echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin"
  
                         // Check Docker connection
-                        sh 'docker build -t gokul4/py-1 . '
-                        sh 'docker push gokul4/py-1 ' 
+                        sh 'docker build -t gokul4/py-ext . '
+                        sh 'docker push gokul4/py-ext ' 
  
                      
                     }
