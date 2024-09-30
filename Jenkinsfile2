@@ -1,0 +1,77 @@
+pipeline {
+    agent any
+    
+    environment {
+        PATH = "${env.PATH}:/opt/homebrew/bin" 
+        base_image = "gokul4/py-env"
+        dev_image = "gokul4/dev:latest"
+        prod_image = "gokul4/prod:latest"
+        qa_image = "gokul4/qa:latest"
+    }
+
+    stages {
+        stage('Source Code Checkout') {
+            steps {
+                git branch: 'main', changelog: false, poll: false, url: 'https://github.com/Gokul07013/intern-p1'
+                echo "Parameter: ${params}"
+            }
+        }
+        
+        stage('Docker Build and Push') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'dockercred', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                        sh "echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin"
+ 
+                        // build
+                        sh "docker build -t ${base_image} ."
+                        echo "Deploy parameter: ${params.deploy}"
+                        
+                    }
+                }
+            }
+        }
+        
+        stage('Deploy On Dev') {
+            steps {
+                script {
+                    if (params.deploy == 'dev' || params.deploy == '*') {
+                        sh "docker tag ${base_image} ${dev_image}"
+                        sh "docker push ${dev_image}"
+                    } 
+                    else {
+                        echo "Skipping Dev"
+                    }
+                }
+            }
+        }
+        
+        stage('Deploy On QA') {
+            steps {
+                script {
+                    if (params.deploy == 'qa' || params.deploy == '*') {
+                        sh "docker tag ${base_image} ${qa_image}"
+                        sh "docker push ${qa_image}"
+                    } 
+                    else {
+                        echo "Skipping QA"
+                    }
+                }
+            }
+        }
+        
+        stage('Deploy On PROD') {
+            steps {
+                script {
+                    if (params.deploy == 'prod' || params.deploy == '*') {
+                        sh "docker tag ${base_image} ${prod_image}"
+                        sh "docker push ${prod_image}"
+                    } 
+                    else {
+                        echo "Skipping Prod"
+                    }
+                }
+            }
+        }
+    }
+}
